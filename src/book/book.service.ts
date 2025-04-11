@@ -38,4 +38,31 @@ export class BookService {
 
     return updatedBook;
   }
+
+  async deleteBook (id: string) {
+    try {
+      const findBook = await this.prisma.book.findFirst({
+        where: { id },
+      });
+  
+      if (!findBook) {
+        throw new HttpException("O livro não foi encontrado!", HttpStatus.NOT_FOUND);
+      }
+  
+      await this.prisma.book.delete({
+        where: {
+          id: findBook.id,
+        },
+      });
+  
+      return {
+        message: "Livro deletado com sucesso!",
+      };
+    } catch (error) {
+      throw new HttpException(
+        error?.message || "Erro ao deletar o livro.",
+        error?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }
