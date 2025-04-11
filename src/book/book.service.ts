@@ -8,35 +8,55 @@ export class BookService {
   constructor(private prisma: PrismaService) {}
 
   async createBook(dto: CreateBookDto) {
+    const existingBook = await this.prisma.book.findFirst({
+      where: {
+        title: dto.title,
+      }
+    })
+  
+    if (existingBook) {
+      throw new HttpException(
+        "Já existe um livro com esse título e autor.",
+        HttpStatus.CONFLICT
+      );
+    }
+  
     const newBook = await this.prisma.book.create({
       data: {
         title: dto.title,
         author: dto.author,
         description: dto.description,
-        year: dto.year
-      }
-    })
-
+        year: dto.year,
+      },
+    });
+  
     return newBook;
   }
 
   async updateBook(id: string, dto: UpdateBookDto) {
-    const findBook = await this.prisma.book.findFirst({
-      where: { id },
-    })
-
-    if(!findBook) {
-      throw new HttpException("O livro não foi encontrado!", HttpStatus.NOT_FOUND);
+    try {
+      const findBook = await this.prisma.book.findFirst({
+        where: { id },
+      });
+  
+      if (!findBook) {
+        throw new HttpException("O livro não foi encontrado!", HttpStatus.NOT_FOUND);
+      }
+  
+      const updatedBook = await this.prisma.book.update({
+        where: {
+          id: findBook.id,
+        },
+        data: dto,
+      });
+  
+      return updatedBook;
+    } catch (error) {
+      throw new HttpException(
+        error?.message || "Erro ao atualizar o livro.",
+        error?.status || HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
-
-    const updatedBook = await this.prisma.book.update({
-      where: {
-        id: findBook.id,
-      },
-      data: dto,
-    })
-
-    return updatedBook;
   }
 
   async deleteBook (id: string) {
