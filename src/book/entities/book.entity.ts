@@ -5,4 +5,6 @@ export class Book {
   author: string;
   description: string;
   year: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
