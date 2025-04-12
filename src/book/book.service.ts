@@ -2,10 +2,22 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class BookService {
   constructor(private prisma: PrismaService) {}
+
+  async getAllBooks(dto?: PaginationDto) {
+    const { limit = 10, offset = 0 } = dto || {};
+
+    const allBooks = await this.prisma.book.findMany({
+      take: limit,
+      skip: offset
+    });
+
+    return allBooks;
+  }
 
   async getBookById(id: string) {
     const findBook = await this.prisma.book.findUnique({
