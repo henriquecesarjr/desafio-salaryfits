@@ -7,6 +7,18 @@ import { UpdateBookDto } from './dto/update-book.dto';
 export class BookService {
   constructor(private prisma: PrismaService) {}
 
+  async getBookById(id: string) {
+    const findBook = await this.prisma.book.findUnique({
+      where: { id },
+    });
+
+    if (!findBook) {
+      throw new HttpException("O livro não foi encontrado!", HttpStatus.NOT_FOUND);
+    }
+
+    return findBook;
+  }
+
   async createBook(dto: CreateBookDto) {
     const existingBook = await this.prisma.book.findFirst({
       where: {
