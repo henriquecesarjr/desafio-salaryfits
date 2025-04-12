@@ -71,7 +71,12 @@ export class BookService {
         where: {
           id: findBook.id,
         },
-        data: dto,
+        data: {
+          title: dto?.title ? dto?.title : findBook.title,
+          author: dto?.author ? dto?.author : findBook.author,
+          description: dto.description ? dto?.description : findBook.description,
+          year: dto?.year ? dto?.year : findBook.year
+        }
       });
   
       return updatedBook;
