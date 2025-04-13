@@ -6,12 +6,15 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { PayloadTokenDto } from 'src/auth/dto/payload-token.dto';
 import { CreateReviewDto } from 'src/review/dto/create-review.dto';
 import { UpdateReviewDto } from 'src/review/dto/update-review.dto';
+import { ResponseBookDto } from './dto/response-book.dto';
+import { ResponseReviewDto } from 'src/review/dto/review-response.dto';
+import { ResponseAllReviews } from 'src/review/dto/all-reviews-response.dto';
 
 @Injectable()
 export class BookService {
   constructor(private prisma: PrismaService) {}
 
-  async getAllBooks(dto?: PaginationDto) {
+  async getAllBooks(dto?: PaginationDto): Promise<ResponseBookDto[]> {
     const { limit = 10, offset = 0 } = dto || {};
 
     const allBooks = await this.prisma.book.findMany({
@@ -22,7 +25,7 @@ export class BookService {
     return allBooks;
   }
 
-  async getBookById(id: string) {
+  async getBookById(id: string): Promise<ResponseBookDto>  {
     const findBook = await this.prisma.book.findUnique({
       where: { id },
     });
@@ -34,7 +37,7 @@ export class BookService {
     return findBook;
   }
 
-  async createBook(dto: CreateBookDto) {
+  async createBook(dto: CreateBookDto): Promise<ResponseBookDto> {
     const existingBook = await this.prisma.book.findFirst({
       where: {
         title: dto.title,
@@ -57,7 +60,7 @@ export class BookService {
     return newBook;
   }
 
-  async updateBook(id: string, dto: UpdateBookDto) {
+  async updateBook(id: string, dto: UpdateBookDto): Promise<ResponseBookDto> {
     try {
       const findBook = await this.prisma.book.findFirst({
         where: { id },
@@ -115,7 +118,7 @@ export class BookService {
     }
   }
 
-  async createReview(bookId: string, createReviewdto: CreateReviewDto, tokenPayloadDto: PayloadTokenDto) {
+  async createReview(bookId: string, createReviewdto: CreateReviewDto, tokenPayloadDto: PayloadTokenDto): Promise<ResponseReviewDto> {
     const bookExists = await this.prisma.book.findUnique({
       where: { id: bookId }
     });
@@ -135,7 +138,7 @@ export class BookService {
       throw new ConflictException('Você já avaliou este livro');
     }
 
-    return this.prisma.review.create({
+    const createdReview = this.prisma.review.create({
       data: {
         bookId,
         userId: tokenPayloadDto.sub,
@@ -143,9 +146,13 @@ export class BookService {
         comment: createReviewdto.comment
       }
     })
+
+    return createdReview;
   }
 
-  async getBookReviews(bookId: string) {
+  async getBookReviews(bookId: string, dto: PaginationDto): Promise<ResponseAllReviews[]> {
+    const { limit = 10, offset = 0 } = dto || {};
+
     const bookExists = await this.prisma.book.findUnique({
       where: { id: bookId }
     });
@@ -173,7 +180,7 @@ export class BookService {
     return reviews;
   }
 
-  async updateReview(id: string, updateReviewdto: UpdateReviewDto, tokenPayloadDto: PayloadTokenDto) {
+  async updateReview(id: string, updateReviewdto: UpdateReviewDto, tokenPayloadDto: PayloadTokenDto): Promise<ResponseReviewDto> {
     try {
       const reviewsExists = await this.prisma.review.findUnique({
         where: {

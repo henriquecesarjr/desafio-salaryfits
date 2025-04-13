@@ -6,6 +6,7 @@ import { LoginDto } from './dto/login.dto';
 import jwtConfig from './config/jwt.config';
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { UserResponseDto } from 'src/users/dto/user-response.dto';
 
 @Injectable()
 export class AuthService {
@@ -18,7 +19,7 @@ export class AuthService {
     private jwtService: JwtService
   ) {}
 
-  async signUp(dto: CreateUserDto) {
+  async signUp(dto: CreateUserDto): Promise<UserResponseDto> {
     try {
       const existingUser = await this.prisma.user.findUnique({
         where: { email: dto.email },
@@ -49,7 +50,7 @@ export class AuthService {
     }
   }
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto): Promise<UserResponseDto> {
 
     const user = await this.prisma.user.findFirst({
       where:{
@@ -80,12 +81,14 @@ export class AuthService {
       }
     )
 
-    return {
+    const userLogin = {
       id: user.id,
       name: user.name,
       email: user.email,
       token: token
     }
+
+    return userLogin;
   }
 
 }
