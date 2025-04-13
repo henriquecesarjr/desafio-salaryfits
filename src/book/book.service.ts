@@ -1,8 +1,11 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ConflictException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { PayloadTokenDto } from 'src/auth/dto/payload-token.dto';
+import { CreateReviewDto } from 'src/review/dto/create-review.dto';
+import { UpdateReviewDto } from 'src/review/dto/update-review.dto';
 
 @Injectable()
 export class BookService {
@@ -39,10 +42,7 @@ export class BookService {
     })
   
     if (existingBook) {
-      throw new HttpException(
-        "Já existe um livro com esse título e autor.",
-        HttpStatus.CONFLICT
-      );
+      throw new HttpException("Já existe um livro com esse título e autor.", HttpStatus.CONFLICT);
     }
   
     const newBook = await this.prisma.book.create({
@@ -112,6 +112,98 @@ export class BookService {
         error?.message || "Erro ao deletar o livro.",
         error?.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  async createReview(bookId: string, createReviewdto: CreateReviewDto, tokenPayloadDto: PayloadTokenDto) {
+    const bookExists = await this.prisma.book.findUnique({
+      where: { id: bookId }
+    });
+
+    if (!bookExists) {
+      throw new NotFoundException('Livro não encontrado');
+    }
+
+    const existingReview = await this.prisma.review.findFirst({
+      where: {
+        bookId,
+        userId: tokenPayloadDto.sub
+      }
+    });
+
+    if (existingReview) {
+      throw new ConflictException('Você já avaliou este livro');
+    }
+
+    return this.prisma.review.create({
+      data: {
+        bookId,
+        userId: tokenPayloadDto.sub,
+        rating: createReviewdto.rating,
+        comment: createReviewdto.comment
+      }
+    })
+  }
+
+  async getBookReviews(bookId: string) {
+    const bookExists = await this.prisma.book.findUnique({
+      where: { id: bookId }
+    });
+
+    if (!bookExists) {
+      throw new NotFoundException('Livro não encontrado');
+    }
+
+    const reviews = await this.prisma.review.findMany({
+      where: { bookId: bookExists.id },
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        createdAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+  
+    return reviews;
+  }
+
+  async updateReview(id: string, updateReviewdto: UpdateReviewDto, tokenPayloadDto: PayloadTokenDto) {
+    try {
+      const reviewsExists = await this.prisma.review.findUnique({
+        where: {
+          id,
+          userId: tokenPayloadDto.sub,
+        }
+      })
+  
+      if(!reviewsExists) {
+        throw new HttpException("Review não encontrada", HttpStatus.NOT_FOUND);
+      }
+
+      if(reviewsExists.userId !== tokenPayloadDto.sub) {
+        throw new HttpException("Não é possível atualizar essa avaliação", HttpStatus.UNAUTHORIZED);
+      }
+
+      const updatedReview = await this.prisma.review.update({
+        where: {
+          id: reviewsExists.id
+        },
+        data: {
+          rating: updateReviewdto?.rating ? updateReviewdto?.rating : reviewsExists.rating,
+          comment: updateReviewdto?.comment ? updateReviewdto?.comment : reviewsExists.comment
+        }
+      })
+      
+      return updateReviewd;
+
+    }catch(err) {
+      throw new HttpException("Erro ao atualizar a avaliação", HttpStatus.BAD_REQUEST);
     }
   }
 }
