@@ -200,7 +200,7 @@ export class BookService {
         }
       })
       
-      return updateReviewd;
+      return updatedReview;
 
     }catch(err) {
       throw new HttpException("Erro ao atualizar a avaliação", HttpStatus.BAD_REQUEST);
