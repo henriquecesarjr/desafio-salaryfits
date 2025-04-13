@@ -27,16 +27,19 @@ export class BookController {
     return this.bookService.getBookById(id);
   }
 
+  @UseGuards(AuthTokenGuard)
   @Post()
   createBook(@Body() dto: CreateBookDto) {
     return this.bookService.createBook(dto);
   }
 
+  @UseGuards(AuthTokenGuard)
   @Patch(":id")
   updateBook(@Param("id") id: string, @Body() dto: UpdateBookDto) {
     return this.bookService.updateBook(id, dto)
   }
 
+  @UseGuards(AuthTokenGuard)
   @Delete(":id")
   deleteBook(@Param("id") id: string) {
     return this.bookService.deleteBook(id);
