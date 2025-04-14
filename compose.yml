@@ -1,0 +1,38 @@
+
+services:
+  mysql-docker:
+    image: mysql:8.0
+    container_name: dev-mysql
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    networks:
+      - dev-network
+
+  phpmyadmin-docker:
+    image: phpmyadmin/phpmyadmin
+    container_name: dev-phpmyadmin
+    environment:
+      PMA_HOST: mysql-docker
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+    restart: always
+    ports:
+      - "5050:80"
+    depends_on:
+      - mysql-docker
+    networks:
+      - dev-network
+
+networks:
+  dev-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
